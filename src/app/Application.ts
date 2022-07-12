@@ -3,6 +3,7 @@ import {
   AnimationMixer,
   AxesHelper,
   DirectionalLight,
+  Fog,
   GridHelper,
   Group,
   LoadingManager,
@@ -58,6 +59,7 @@ export class Application {
     });
 
     this.scene = new Scene();
+    this.scene.fog = new Fog(0xefefef, 100, 400);
 
     // All other inits have to be after new Scene();
 
@@ -166,6 +168,7 @@ export class Application {
     this.scene.add(new AxesHelper(100), new GridHelper(1000, 100));
   }
 
+  // @ts-ignore
   private loadModel(): void {
     const loader = new FBXLoader(this.manager);
     loader.load(model, (fbx) => {
