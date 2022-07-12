@@ -2,7 +2,6 @@ import {
   AmbientLight,
   AnimationMixer,
   AxesHelper,
-  Clock,
   DirectionalLight,
   GridHelper,
   Group,
@@ -21,11 +20,12 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
 
 import model from "@/resources/model.fbx?url";
-import idle from "@/resources/animations/idle.fbx?url";
+
 import {
   CharacterController,
   CharacterControllerParams,
 } from "./CharacterController";
+import { ThirdPersonCamera } from "./ThirdPersonCamera";
 
 export class Application {
   private renderer!: WebGLRenderer;
@@ -36,6 +36,7 @@ export class Application {
   private mixers!: AnimationMixer[];
   private target!: Group;
   private previousAnimate!: number | null;
+  private thirdPersonCamera!: ThirdPersonCamera;
 
   constructor() {
     this.init();
@@ -61,7 +62,7 @@ export class Application {
     // All other inits have to be after new Scene();
 
     this.initCamera();
-    this.initControls();
+    this.initOrbitControls();
     this.initLights();
     this.initPlane();
 
@@ -91,10 +92,11 @@ export class Application {
     );
   }
 
-  private initControls(): void {
+  private initOrbitControls(): void {
     const controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.camera.position.set(25, 10, 25);
     controls.target.set(0, 10, 0);
+    controls.enabled = false;
     controls.update();
   }
 
@@ -121,7 +123,7 @@ export class Application {
   }
 
   private initPlane(): void {
-    const geometry = new PlaneGeometry(100, 100, 10, 10);
+    const geometry = new PlaneGeometry(1000, 1000, 100, 100);
     const material = new MeshStandardMaterial({ color: 0xaeaeae });
     const plane = new Mesh(geometry, material);
     plane.receiveShadow = true;
@@ -152,6 +154,8 @@ export class Application {
     if (this.controls) {
       this.controls.update(timeElapsedS);
     }
+
+    this.thirdPersonCamera.update(timeElapsedS);
   }
 
   private render(): void {
@@ -159,7 +163,7 @@ export class Application {
   }
 
   private initHelpers(): void {
-    this.scene.add(new AxesHelper(100), new GridHelper(100, 10));
+    this.scene.add(new AxesHelper(100), new GridHelper(1000, 100));
   }
 
   private loadModel(): void {
@@ -187,6 +191,12 @@ export class Application {
       scene: this.scene,
       camera: this.camera,
     };
+
     this.controls = new CharacterController(params);
+
+    this.thirdPersonCamera = new ThirdPersonCamera({
+      camera: this.camera,
+      target: this.controls,
+    });
   }
 }

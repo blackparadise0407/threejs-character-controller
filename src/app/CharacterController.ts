@@ -22,6 +22,10 @@ import run from "@/resources/animations/run.fbx?url";
 import walkBackward from "@/resources/animations/walkBackward.fbx?url";
 import standToCrouch from "@/resources/animations/standToCrouch.fbx?url";
 import runBackward from "@/resources/animations/runBackward.fbx?url";
+import crouchWalk from "@/resources/animations/crouchWalk.fbx?url";
+import crouchIdle from "@/resources/animations/crouchIdle.fbx?url";
+import leftStrafeWalk from "@/resources/animations/leftStrafeWalk.fbx?url";
+import dance from "@/resources/animations/dance.fbx?url";
 
 export interface CharacterControllerParams {
   camera: PerspectiveCamera;
@@ -46,9 +50,21 @@ export class CharacterController {
   private target!: Group;
   private mixer!: AnimationMixer;
   private manager!: LoadingManager;
+  private _position!: Vector3;
 
   constructor(params: CharacterControllerParams) {
     this.init(params);
+  }
+
+  public get position(): Vector3 {
+    return this._position;
+  }
+
+  public get rotation(): Quaternion {
+    if (!this.target) {
+      return new Quaternion();
+    }
+    return this.target.quaternion;
   }
 
   private init(params: CharacterControllerParams): void {
@@ -56,6 +72,7 @@ export class CharacterController {
     this.decceleration = new Vector3(-0.0005, -0.0001, -5.0);
     this.acceleration = new Vector3(2, 0.25, 50.0);
     this.velocity = new Vector3(0, 0, 0);
+    this._position = new Vector3();
 
     this.animations = {};
     this.input = new CharacterControllerInput();
@@ -111,6 +128,18 @@ export class CharacterController {
       loader.load(standToCrouch, (a) => {
         onLoad("standToCrouch", a);
       });
+      loader.load(crouchWalk, (a) => {
+        onLoad("crouchWalk", a);
+      });
+      loader.load(crouchIdle, (a) => {
+        onLoad("crouchIdle", a);
+      });
+      loader.load(leftStrafeWalk, (a) => {
+        onLoad("leftStrafeWalk", a);
+      });
+      loader.load(dance, (a) => {
+        onLoad("dance", a);
+      });
     });
   }
 
@@ -140,7 +169,7 @@ export class CharacterController {
     const _R = controlObject.quaternion.clone();
 
     const acc = this.acceleration.clone();
-    if (this.input.keys.shift) {
+    if (this.input.keys.shift && !this.input.keys.crouch) {
       acc.multiplyScalar(4.0);
     }
 
@@ -189,6 +218,8 @@ export class CharacterController {
 
     controlObject.position.add(forward);
     controlObject.position.add(sideways);
+
+    this._position.copy(controlObject.position);
 
     oldPosition.copy(controlObject.position);
 

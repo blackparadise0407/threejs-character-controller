@@ -14,6 +14,7 @@ export class CharacterControllerInput {
       space: false,
       shift: false,
       crouch: false,
+      dance: false,
     };
 
     document.addEventListener(
@@ -46,8 +47,11 @@ export class CharacterControllerInput {
       case "d":
         this.keys.right = true;
         break;
+      case "t":
+        this.keys.dance = true;
+        break;
       case "c":
-        this.keys.crouch = true;
+        this.keys.crouch = !this.keys.crouch;
         break;
       case "shift":
         this.keys.shift = true;
@@ -75,7 +79,9 @@ export class CharacterControllerInput {
         this.keys.right = false;
         break;
       case "c":
-        this.keys.crouch = false;
+        break;
+      case "t":
+        this.keys.dance = false;
         break;
       case "shift":
         this.keys.shift = false;

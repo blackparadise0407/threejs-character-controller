@@ -49,6 +49,8 @@ export class IdleState extends State {
       this.parent.setState("walk");
     } else if (input.keys.crouch) {
       this.parent.setState("standToCrouch");
+    } else if (input.keys.dance) {
+      this.parent.setState("dance");
     }
   }
 }
@@ -90,8 +92,11 @@ export class WalkState extends State {
 
   public update(_: number, input: CharacterControllerInput): void {
     if (input.keys.forward) {
-      if (input.keys.shift) {
+      if (input.keys.shift && !input.keys.crouch) {
         this.parent.setState("run");
+      } else if (input.keys.crouch) {
+        this.parent.setState("crouchWalk");
+        return;
       }
       return;
     }
@@ -179,8 +184,10 @@ export class RunState extends State {
 
   public update(_: number, input: CharacterControllerInput): void {
     if (input.keys.forward || input.keys.backward) {
-      if (!input.keys.shift) {
+      if (!input.keys.shift && !input.keys.crouch) {
         this.parent.setState("walk");
+      } else if (input.keys.crouch) {
+        this.parent.setState("crouchWalk");
       }
       return;
     }
@@ -218,6 +225,9 @@ export class StandToCrouchState extends State {
 
   public update(_: number, input: CharacterControllerInput): void {
     if (input.keys.crouch) {
+      if (input.keys.forward) {
+        this.parent.setState("crouchWalk");
+      }
       return;
     }
     this.parent.setState("idle");
@@ -268,5 +278,204 @@ export class RunBackwardState extends State {
     }
 
     this.parent.setState("idle");
+  }
+}
+
+export class CrouchWalkState extends State {
+  constructor(parent: CharacterFSM) {
+    super(parent);
+  }
+
+  public get name(): string {
+    return "crouchWalk";
+  }
+
+  public enter(prevState: State): void {
+    const curAction = this.parent.animations["crouchWalk"].action;
+    if (prevState) {
+      const prevAction = this.parent.animations[prevState.name].action;
+
+      curAction.enabled = true;
+
+      if (prevState.name == "walk") {
+        const ratio =
+          curAction.getClip().duration / prevAction.getClip().duration;
+        curAction.time = prevAction.time * ratio;
+      } else {
+        curAction.time = 0.0;
+        curAction.setEffectiveTimeScale(1.0);
+        curAction.setEffectiveWeight(1.0);
+      }
+
+      curAction.crossFadeFrom(prevAction, 0.5, true);
+      curAction.play();
+    } else {
+      curAction.play();
+    }
+  }
+
+  public exit(): void {}
+
+  public update(_: number, input: CharacterControllerInput): void {
+    if (input.keys.forward) {
+      if (input.keys.crouch) {
+        this.parent.setState("crouchWalk");
+        return;
+      }
+      if (input.keys.shift) {
+        this.parent.setState("run");
+        return;
+      }
+      this.parent.setState("walk");
+
+      return;
+    }
+
+    this.parent.setState("crouchIdle");
+  }
+}
+
+export class CrouchIdleState extends State {
+  constructor(parent: CharacterFSM) {
+    super(parent);
+  }
+
+  public get name(): string {
+    return "crouchIdle";
+  }
+
+  public enter(prevState: State): void {
+    const curAction = this.parent.animations["crouchIdle"].action;
+    if (prevState) {
+      const prevAction = this.parent.animations[prevState.name].action;
+      curAction.time = 0.0;
+      curAction.enabled = true;
+      curAction.setEffectiveTimeScale(1.0);
+      curAction.setEffectiveWeight(1.0);
+      curAction.crossFadeFrom(prevAction, 0.5, true);
+      curAction.play();
+    } else {
+      curAction.play();
+    }
+  }
+
+  public exit(): void {}
+
+  public update(_: number, input: CharacterControllerInput): void {
+    if (input.keys.forward) {
+      if (input.keys.crouch) {
+        this.parent.setState("crouchWalk");
+        return;
+      }
+      this.parent.setState("walk");
+      return;
+    }
+    this.parent.setState("crouchIdle");
+  }
+}
+
+export class WalkStrafeLeftState extends State {
+  constructor(parent: CharacterFSM) {
+    super(parent);
+  }
+
+  public get name(): string {
+    return "leftStrafeWalk";
+  }
+
+  public enter(prevState: State): void {
+    const curAction = this.parent.animations["leftStrafeWalk"].action;
+    if (prevState) {
+      const prevAction = this.parent.animations[prevState.name].action;
+
+      curAction.enabled = true;
+
+      if (prevState.name == "run") {
+        const ratio =
+          curAction.getClip().duration / prevAction.getClip().duration;
+        curAction.time = prevAction.time * ratio;
+      } else {
+        curAction.time = 0.0;
+        curAction.setEffectiveTimeScale(1.0);
+        curAction.setEffectiveWeight(1.0);
+      }
+
+      curAction.crossFadeFrom(prevAction, 0.5, true);
+      curAction.play();
+    } else {
+      curAction.play();
+    }
+  }
+
+  public exit(): void {}
+
+  public update(_: number, input: CharacterControllerInput): void {
+    // if (input.keys.forward) {
+    //   if (input.keys.shift && !input.keys.crouch) {
+    //     this.parent.setState("run");
+    //   }
+    //   this.parent.setState("walk");
+    //   return;
+    // }
+    if (input.keys.left) {
+      this.parent.setState("leftStrafeWalk");
+      return;
+    }
+    this.parent.setState("idle");
+  }
+}
+
+export class DanceState extends State {
+  private finishCb: () => void;
+  constructor(parent: CharacterFSM) {
+    super(parent);
+    this.finishCb = () => {
+      this.finish();
+    };
+  }
+
+  public get name(): string {
+    return "dance";
+  }
+
+  public exit(): void {
+    this.cleanUp();
+  }
+
+  public enter(prevState: State): void {
+    const curAction = this.parent.animations["dance"].action;
+    const mixer = curAction.getMixer();
+    mixer.addEventListener("finished", this.finishCb);
+
+    if (prevState) {
+      const prevAction = this.parent.animations[prevState.name].action;
+
+      curAction.reset();
+      curAction.setLoop(LoopOnce, 1);
+      curAction.clampWhenFinished = true;
+      curAction.crossFadeFrom(prevAction, 0.2, true);
+      curAction.play();
+    } else {
+      curAction.play();
+    }
+  }
+
+  public update(_: number, input: CharacterControllerInput): void {
+    if (input.keys.forward) {
+      this.parent.setState("walk");
+    } else if (input.keys.backward) {
+      this.parent.setState("walkBackward");
+    }
+  }
+
+  private finish(): void {
+    this.cleanUp();
+    this.parent.setState("idle");
+  }
+
+  private cleanUp(): void {
+    const action = this.parent.animations["dance"].action;
+
+    action.getMixer().removeEventListener("finished", this.finishCb);
   }
 }
