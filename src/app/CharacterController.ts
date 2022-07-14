@@ -70,7 +70,7 @@ export class CharacterController {
   private init(params: CharacterControllerParams): void {
     this.params = params;
     this.decceleration = new Vector3(-0.0005, -0.0001, -5.0);
-    this.acceleration = new Vector3(2, 0.25, 50.0);
+    this.acceleration = new Vector3(2, 0.25, 70.0);
     this.velocity = new Vector3(0, 0, 0);
     this._position = new Vector3();
 
@@ -173,7 +173,10 @@ export class CharacterController {
       acc.multiplyScalar(4.0);
     }
 
-    if (this.stateMachine.currentState?.name == "jump") {
+    if (
+      this.stateMachine.currentState?.name == "jump" ||
+      this.stateMachine.currentState?.name == "crouchIdle"
+    ) {
       acc.multiplyScalar(0.0);
     }
 

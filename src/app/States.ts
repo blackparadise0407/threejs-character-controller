@@ -362,15 +362,18 @@ export class CrouchIdleState extends State {
   public exit(): void {}
 
   public update(_: number, input: CharacterControllerInput): void {
-    if (input.keys.forward) {
-      if (input.keys.crouch) {
+    if (input.keys.crouch) {
+      if (input.keys.forward) {
         this.parent.setState("crouchWalk");
         return;
       }
+      return;
+    }
+    if (input.keys.forward) {
       this.parent.setState("walk");
       return;
     }
-    this.parent.setState("crouchIdle");
+    this.parent.setState("idle");
   }
 }
 
