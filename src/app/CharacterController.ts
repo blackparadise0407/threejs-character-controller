@@ -173,6 +173,14 @@ export class CharacterController {
       acc.multiplyScalar(4.0);
     }
 
+    if (this.input.keys.crouch) {
+      acc.multiplyScalar(0.5);
+    }
+
+    if (this.input.keys.crouch && this.input.keys.shift) {
+      acc.multiplyScalar(2.5);
+    }
+
     if (
       this.stateMachine.currentState?.name == "jump" ||
       this.stateMachine.currentState?.name == "crouchIdle"
